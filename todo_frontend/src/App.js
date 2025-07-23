@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+// Import createClient directly from the installed npm package
+import { createClient } from '@supabase/supabase-js';
 
 // PUBLIC_INTERFACE
 /**
@@ -7,37 +9,15 @@ import './App.css';
  * Uses REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY from environment variables for Supabase connection.
  */
 function App() {
-  // --- SUPABASE SDK DYNAMIC LOADING ---
-  const [supabase, setSupabase] = useState(null);
+  // --- SUPABASE CLIENT SETUP ---
+  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+  const supabaseKey = process.env.REACT_APP_SUPABASE_KEY;
+  // Only create client once (useRef for singleton)
+  const supabase = useRef(null);
+  if (!supabase.current && supabaseUrl && supabaseKey) {
+    supabase.current = createClient(supabaseUrl, supabaseKey);
+  }
 
-  useEffect(() => {
-    async function loadSupabase() {
-      if (!window.createClient) {
-        // Dynamically load Supabase JS from CDN if not already loaded
-        const script = document.createElement('script');
-        script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-        script.async = true;
-        document.body.appendChild(script);
-
-        script.onload = () => {
-          setSupabase(
-            window.createClient(
-              process.env.REACT_APP_SUPABASE_URL,
-              process.env.REACT_APP_SUPABASE_KEY
-            )
-          );
-        };
-      } else {
-        setSupabase(
-          window.createClient(
-            process.env.REACT_APP_SUPABASE_URL,
-            process.env.REACT_APP_SUPABASE_KEY
-          )
-        );
-      }
-    }
-    loadSupabase();
-  }, []);
 
   // --- STATE ---
   const [todos, setTodos] = useState([]);
@@ -66,7 +46,7 @@ function App() {
 
   // --- FETCH TODOS FROM SUPABASE ---
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase.current) return;
     setLoading(true);
     setError(null);
 
@@ -75,7 +55,7 @@ function App() {
      * Fetches the todo list from the Supabase database.
      */
     async function fetchTodos() {
-      const { data, error } = await supabase
+      const { data, error } = await supabase.current
         .from('todos')
         .select('*')
         .order('id', { ascending: false });
@@ -86,7 +66,7 @@ function App() {
     fetchTodos();
 
     // Listen for changes using Supabase real-time
-    const channel = supabase
+    const channel = supabase.current
       .channel('table-db-changes')
       .on(
         'postgres_changes',
@@ -96,7 +76,7 @@ function App() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.current.removeChannel(channel);
     };
   }, [supabase]);
 
@@ -106,10 +86,10 @@ function App() {
    */
   async function addTodo(e) {
     e.preventDefault();
-    if (!input.trim() || !supabase) return;
+    if (!input.trim() || !supabase.current) return;
     setAdding(true);
     setError(null);
-    const { error } = await supabase
+    const { error } = await supabase.current
       .from('todos')
       .insert([{ text: input.trim(), completed: false }]);
     if (error) setError('Failed to add todo');
@@ -123,8 +103,8 @@ function App() {
    * Deletes a todo by its ID from Supabase.
    */
   async function deleteTodo(id) {
-    if (!supabase) return;
-    await supabase.from('todos').delete().eq('id', id);
+    if (!supabase.current) return;
+    await supabase.current.from('todos').delete().eq('id', id);
   }
 
   // PUBLIC_INTERFACE
@@ -141,11 +121,11 @@ function App() {
    * Updates a todo's text in Supabase.
    */
   async function updateTodo(id, text) {
-    if (!supabase) return;
+    if (!supabase.current) return;
     const value = text.trim();
     if (!value) return;
     setError(null);
-    const { error } = await supabase.from('todos').update({ text: value }).eq('id', id);
+    const { error } = await supabase.current.from('todos').update({ text: value }).eq('id', id);
     if (error) setError('Error updating todo');
     setEditId(null);
     setEditText('');
@@ -156,8 +136,8 @@ function App() {
    * Sets a todo as complete/incomplete in Supabase.
    */
   async function toggleComplete(todo) {
-    if (!supabase) return;
-    await supabase
+    if (!supabase.current) return;
+    await supabase.current
       .from('todos')
       .update({ completed: !todo.completed })
       .eq('id', todo.id);
