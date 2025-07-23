@@ -83,6 +83,7 @@ function App() {
   // PUBLIC_INTERFACE
   /**
    * Adds a new todo item to Supabase.
+   * Updated: Uses 'is_complete' in place of 'completed'.
    */
   async function addTodo(e) {
     e.preventDefault();
@@ -91,7 +92,7 @@ function App() {
     setError(null);
     const { error } = await supabase.current
       .from('todos')
-      .insert([{ text: input.trim(), completed: false }]);
+      .insert([{ text: input.trim(), is_complete: false }]);
     if (error) setError('Failed to add todo');
     setInput('');
     inputRef.current && inputRef.current.focus();
@@ -134,12 +135,13 @@ function App() {
   // PUBLIC_INTERFACE
   /**
    * Sets a todo as complete/incomplete in Supabase.
+   * Updated: Uses 'is_complete' field.
    */
   async function toggleComplete(todo) {
     if (!supabase.current) return;
     await supabase.current
       .from('todos')
-      .update({ completed: !todo.completed })
+      .update({ is_complete: !todo.is_complete })
       .eq('id', todo.id);
   }
 
@@ -149,7 +151,7 @@ function App() {
     return (
       <li
         key={todo.id}
-        className={`todo-item${todo.completed ? ' completed' : ''}`}
+        className={`todo-item${todo.is_complete ? ' completed' : ''}`}
         style={{
           background: 'var(--bg-secondary)',
           border: '1px solid var(--border-color)',
@@ -165,7 +167,7 @@ function App() {
         <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
           <input
             type="checkbox"
-            checked={!!todo.completed}
+            checked={!!todo.is_complete}
             onChange={() => toggleComplete(todo)}
             aria-label="Toggle complete"
             style={{
@@ -226,8 +228,8 @@ function App() {
           ) : (
             <span
               style={{
-                textDecoration: todo.completed ? 'line-through' : '',
-                color: todo.completed ? '#aaa' : 'inherit',
+                textDecoration: todo.is_complete ? 'line-through' : '',
+                color: todo.is_complete ? '#aaa' : 'inherit',
                 fontSize: 17,
                 flex: 1,
                 wordBreak: 'break-word'
