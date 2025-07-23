@@ -1,13 +1,15 @@
 /* CSS Variables for Theme Management */
 :root {
-  /* Light theme colors */
-  --bg-primary: #ffffff;
+  /* Custom palette for To-Do minimal theme */
+  --primary-color: #1976d2;
+  --accent-color: #ffb300;
+  --secondary-bg: #424242;
+  --bg-primary: #fff;
   --bg-secondary: #f8f9fa;
-  --text-primary: #282c34;
-  --text-secondary: #61dafb;
-  --border-color: #e9ecef;
-  --button-bg: #007bff;
-  --button-text: #ffffff;
+  --text-primary: #222;
+  --border-color: rgba(25, 118, 210, 0.12);
+  --button-bg: #1976d2;
+  --button-text: #fff;
 }
 
 [data-theme="dark"] {
